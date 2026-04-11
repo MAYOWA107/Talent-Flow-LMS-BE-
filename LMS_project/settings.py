@@ -46,10 +46,11 @@ INSTALLED_APPS = [
     # external apps
     "rest_framework",
     "corsheaders",
+    "drf_yasg",
 ]
 
 
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
