@@ -6,7 +6,9 @@ from rest_framework import status
 from django.db.models import Avg, Count, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from .permission import IsInstructor, IsStudent, IsEnrolled, IsOwner
+from .permission import IsInstructor, IsStudent, IsEnrolled
+from django.db.models import Q
+from rest_framework.pagination import LimitOffsetPagination
 
 from .models import (
     Course,
@@ -40,8 +42,19 @@ def course_list(request):
             total_reviews=Count("reviews"),
         )
     )
-    serializer = CourseSerializer(courses, many=True)
-    return Response(serializer.data)
+
+    query = request.query_params.get("query")
+    if query:
+        courses = courses.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(instructor__full_name__icontains=query)
+        )
+    paginator = LimitOffsetPagination()
+    paginator.default_limit = 4
+    result_page = paginator.paginate_queryset(courses, request)
+    serializer = CourseSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 # course detail
@@ -329,3 +342,21 @@ def delete_review(request, id, course_id):
     review.delete()
 
     return Response({"message": "review deleted succesfully."})
+
+
+@api_view(["GET"])
+def search_course(request):
+    query = request.query_params.get("query")
+    if not query:
+        return Response(
+            {"message": "No query provided"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    courses = Course.objects.filter(
+        Q(title__icontains=query)
+        | Q(description__icontains=query)
+        | Q(instructor__full_name__icontains=query)
+    )
+
+    serializer = CourseSerializer(courses, many=True)
+    return Response(serializer.data)

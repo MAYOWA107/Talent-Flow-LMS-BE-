@@ -41,4 +41,5 @@ urlpatterns = [
         views.delete_review,
         name="delete_review",
     ),
+    path("search", views.search_course, name="search"),
 ]
