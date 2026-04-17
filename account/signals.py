@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 from .tasks import send_otp_mail
+from core.models import Profile
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -21,3 +22,4 @@ def create_token(sender, instance, created, **kwargs):
         otp = OtpToken.objects.filter(user=instance).last()
         send_otp_mail.delay(instance.email, otp.otp_code)
 
+        Profile.objects.create(user=instance)
